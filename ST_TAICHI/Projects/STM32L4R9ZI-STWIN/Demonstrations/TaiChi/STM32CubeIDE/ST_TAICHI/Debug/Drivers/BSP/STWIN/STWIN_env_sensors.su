@@ -1,0 +1,13 @@
+STWIN_env_sensors.c:481:16:HTS221_0_Probe	64	static
+STWIN_env_sensors.c:443:9:BSP_HTS221_WriteReg	8	static
+STWIN_env_sensors.c:459:9:BSP_HTS221_ReadReg	8	static
+STWIN_env_sensors.c:567:16:LPS22HH_0_Probe	72	static
+STWIN_env_sensors.c:58:9:BSP_ENV_SENSOR_Init	40	static
+STWIN_env_sensors.c:171:9:BSP_ENV_SENSOR_DeInit	8	static
+STWIN_env_sensors.c:197:9:BSP_ENV_SENSOR_GetCapabilities	8	static
+STWIN_env_sensors.c:223:9:BSP_ENV_SENSOR_ReadID	8	static
+STWIN_env_sensors.c:252:9:BSP_ENV_SENSOR_Enable	8	static
+STWIN_env_sensors.c:291:9:BSP_ENV_SENSOR_Disable	8	static
+STWIN_env_sensors.c:331:9:BSP_ENV_SENSOR_GetOutputDataRate	8	static
+STWIN_env_sensors.c:371:9:BSP_ENV_SENSOR_SetOutputDataRate	8	static
+STWIN_env_sensors.c:411:9:BSP_ENV_SENSOR_GetValue	8	static

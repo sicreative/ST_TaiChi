@@ -1,0 +1,9 @@
+OTA.c:427:17:GetPage	0	static
+OTA.c:447:17:GetBank	0	static
+OTA.c:109:6:CleanBeforeRestart	8	static
+OTA.c:123:6:ReWriteSizeOfUpdate	0	static
+OTA.c:133:10:ReadRemSizeOfUpdate	0	static
+OTA.c:143:8:CheckBootLoaderCompliance	280	static
+OTA.c:191:8:CheckFirstRunAfterFOTA	280	static
+OTA.c:249:8:UpdateFWBlueMS	328	static
+OTA.c:380:6:StartUpdateFWBlueMS	304	static

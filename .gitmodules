@@ -1,0 +1,3 @@
+[submodule "STtaichi_IOS/taichi"]
+	path = STtaichi_IOS/taichi
+	url = https://github.com/sicreative/ST_TaiChi

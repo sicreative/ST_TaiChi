@@ -110,6 +110,8 @@ extern void *MotionCompObj[MOTION_INSTANCES_NBR];
 
 
 
+
+
 #ifdef PREDMNT1_ENABLE_PRINTF
   extern TIM_HandleTypeDef  TimHandle;
   extern void CDC_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
@@ -188,8 +190,8 @@ typedef struct {
 
 
 
-static volatile taiChiResult_t* BufftaiChiResult[BUFF_TAICHIRESULT_SIZE];
-static volatile uint8_t taiChiResultPos = 0;
+volatile taiChiResult_t* BufftaiChiResult[BUFF_TAICHIRESULT_SIZE];
+volatile uint8_t taiChiResultPos = 0;
 
 
 
@@ -330,6 +332,8 @@ static void InitMotionML(void){
 
 	// Set MotionML Interrupt
 	MotionMLIntSet(1);
+
+
 
 
 }
@@ -583,6 +587,9 @@ int main(void)
     PREDMNT1_PRINTF("ERROR: BootLoader NOT Compliant with FOTA procedure\r\n\n");
   }
 
+
+
+
   /* Set Accelerometer Full Scale to 2G */
   //Set2GAccelerometerFullScale();
 
@@ -593,6 +600,7 @@ int main(void)
   //InitPredictiveMaintenance();
   
   InitMotionML();
+
 
   /* Infinite loop */
   while (1)
@@ -609,6 +617,7 @@ int main(void)
           LedOffTargetPlatform();
         }
       }
+
     }
 
 
@@ -709,7 +718,7 @@ int main(void)
       SendEnv=0;
       SendEnvironmentalData();
     }
-    
+
     /* Mic Data */
     if (SendAudioLevel) {
       SendAudioLevel = 0;
@@ -721,7 +730,7 @@ int main(void)
       SendAccGyroMag=0;
       SendMotionData();
     }
-    
+
     /* Battery Info Data */
     if(SendBatteryInfo){
       SendBatteryInfo=0;
@@ -734,12 +743,14 @@ int main(void)
     }
 
 
-    if (printData && !(HAL_GetTick()%38)){
 
 
-    	MotionMLTrainingData();
-
-    }
+//    if (printData && !(HAL_GetTick()%38)){
+//
+//
+//    	MotionMLTrainingData();
+//
+//    }
 
 
 
@@ -749,6 +760,11 @@ int main(void)
 
 
     SendTaiChiData();
+
+
+
+
+
 
 
 
@@ -1016,10 +1032,15 @@ static void SendBatteryInfoData(void)
 
   stbc02_State_TypeDef BC_State;
 
+
+
   /* Read the voltage value and battery level status */
   BSP_BC_GetVoltageAndLevel(&Voltage,&BatteryLevel);
 
   BSP_BC_GetState(&BC_State);
+
+
+
 
 #ifdef PREDMNT1_DEBUG_NOTIFY_TRAMISSION
   if(W2ST_CHECK_CONNECTION(W2ST_CONNECT_STD_TERM)) {
@@ -1054,6 +1075,177 @@ static void SendBatteryInfoData(void)
 #endif /* PREDMNT1_DEBUG_NOTIFY_TRAMISSION */
 }
 
+/**
+  * @brief  stop unnecessary IRQ and off all sensor before sleep
+  * @param  None
+  * @retval None
+  */
+void SleepDisable(void){
+
+	HAL_NVIC_DisableIRQ(DFSDM_DMA_ANALOG_IRQn);
+	HAL_NVIC_DisableIRQ(DFSDM_DMA_DIGITAL_IRQn);
+	HAL_NVIC_DisableIRQ(DMA1_Channel1_IRQn);
+
+	  if(TargetBoardFeatures.AccSensorIsInit==1)
+		  BSP_MOTION_SENSOR_Disable(ACCELERO_INSTANCE, MOTION_ACCELERO);
+
+	 if(TargetBoardFeatures.GyroSensorIsInit==1)
+		 BSP_MOTION_SENSOR_Disable(GYRO_INSTANCE, MOTION_GYRO);
+	if (TargetBoardFeatures.MagSensorIsInit== 1)
+		BSP_MOTION_SENSOR_Disable(MAGNETO_INSTANCE, MOTION_MAGNETO);
+	if (TargetBoardFeatures.TempSensorsIsInit == 1 && TargetBoardFeatures.HumSensorIsInit == 1 )
+		BSP_ENV_SENSOR_Disable(HUMIDITY_INSTANCE,ENV_TEMPERATURE);
+	if (TargetBoardFeatures.HumSensorIsInit == 1 )
+		BSP_ENV_SENSOR_Disable(HUMIDITY_INSTANCE,ENV_HUMIDITY);
+	if(TargetBoardFeatures.TempSensorsIsInit[1])
+		 BSP_ENV_SENSOR_Disable(TEMPERATURE_INSTANCE_2, ENV_TEMPERATURE);
+    if(TargetBoardFeatures.PressSensorIsInit)
+		 BSP_ENV_SENSOR_Disable(PRESSURE_INSTANCE, ENV_PRESSURE);
+
+
+
+
+
+
+	//HAL_NVIC_DisableIRQ(HCI_TL_SPI_EXTI_IRQn);
+	HAL_NVIC_DisableIRQ(OTG_FS_IRQn);
+	HAL_NVIC_DisableIRQ(TIM3_IRQn);
+	HAL_NVIC_DisableIRQ(STBC02_USED_TIM_IRQn);
+	HAL_NVIC_DisableIRQ(TIM4_IRQn);
+	HAL_NVIC_DisableIRQ(TIM5_IRQn);
+	HAL_NVIC_DisableIRQ(TIM1_CC_IRQn);
+#ifdef PREDMNT1_ENABLE_PRINTF
+	HAL_NVIC_DisableIRQ(TIMx_IRQn);
+#endif
+
+
+
+	//STBC02_USED_TIM_CLK_DISABLE();
+
+
+
+
+
+	__HAL_RCC_TIM1_CLK_DISABLE();
+	 __HAL_RCC_TIM4_CLK_DISABLE();
+	 __HAL_RCC_TIM5_CLK_DISABLE();
+
+	 /*##-1- Enable peripherals and GPIO Clocks #################################*/
+	  /* TIM3 Peripheral clock enable */
+	  __HAL_RCC_TIM3_CLK_DISABLE();
+	  /* Enable GPIO channels Clock */
+	  __HAL_RCC_GPIOB_CLK_DISABLE();
+
+
+	  HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0);
+
+
+	  HAL_GPIO_DeInit(GPIOA, (GPIO_PIN_11 | GPIO_PIN_12));
+
+
+
+
+
+
+	//HAL_NVIC_DisableIRQ(I2C2_EV_IRQn);
+	//HAL_NVIC_DisableIRQ(I2C2_ER_IRQn);
+}
+
+/**
+  * @brief  star  IRQ and on all sensor after sleep
+  * @param  None
+  * @retval None
+  */
+void SleepEnable(void){
+
+
+
+
+	HAL_NVIC_EnableIRQ(DFSDM_DMA_ANALOG_IRQn);
+	HAL_NVIC_EnableIRQ(DFSDM_DMA_DIGITAL_IRQn);
+	HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
+	//HAL_NVIC_EnableIRQ(HCI_TL_SPI_EXTI_IRQn);
+	HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
+	HAL_NVIC_EnableIRQ(TIM3_IRQn);
+	HAL_NVIC_EnableIRQ(STBC02_USED_TIM_IRQn);
+	HAL_NVIC_EnableIRQ(TIM4_IRQn);
+	HAL_NVIC_EnableIRQ(TIM5_IRQn);
+	HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
+#ifdef PREDMNT1_ENABLE_PRINTF
+	HAL_NVIC_EnableIRQ(TIMx_IRQn);
+#endif
+
+
+
+
+
+
+	__HAL_RCC_TIM1_CLK_ENABLE();
+	 __HAL_RCC_TIM4_CLK_ENABLE();
+	 __HAL_RCC_TIM5_CLK_ENABLE();
+
+	STBC02_USED_TIM_CLK_ENABLE();
+
+
+
+	 /*##-1- Enable peripherals and GPIO Clocks #################################*/
+	  /* TIM3 Peripheral clock enable */
+	  __HAL_RCC_TIM3_CLK_ENABLE();
+	  /* Enable GPIO channels Clock */
+	  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+	  GPIO_InitTypeDef GPIO_InitStruct;
+
+	  /* Configure  (TIMx_Channel) in Alternate function, push-pull and high speed */
+	  GPIO_InitStruct.Pin = GPIO_PIN_0;
+	  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	  GPIO_InitStruct.Pull = GPIO_PULLUP;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	  GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+	  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+
+
+//	   /* Configure USB FS GPIOs */
+//	   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+	   /* Configure DM DP Pins */
+	   GPIO_InitStruct.Pin = (GPIO_PIN_11 | GPIO_PIN_12);
+	   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	   GPIO_InitStruct.Pull = GPIO_NOPULL;
+	   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	   GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
+	   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	   /* Enable USB FS Clock */
+//	   __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
+
+//	HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
+//	HAL_NVIC_EnableIRQ(I2C2_ER_IRQn);
+
+
+	  /*  Enable all the sensors */
+
+	if(TargetBoardFeatures.AccSensorIsInit==1)
+		 BSP_MOTION_SENSOR_Enable(ACCELERO_INSTANCE, MOTION_ACCELERO);
+
+	if(TargetBoardFeatures.GyroSensorIsInit==1)
+		 BSP_MOTION_SENSOR_Enable(GYRO_INSTANCE, MOTION_GYRO);
+	if (TargetBoardFeatures.MagSensorIsInit== 1)
+		BSP_MOTION_SENSOR_Enable(MAGNETO_INSTANCE, MOTION_MAGNETO);
+	if (TargetBoardFeatures.TempSensorsIsInit == 1)
+		BSP_MOTION_SENSOR_Enable(HUMIDITY_INSTANCE,ENV_TEMPERATURE);
+	if (TargetBoardFeatures.HumSensorIsInit == 1 )
+		BSP_MOTION_SENSOR_Enable(HUMIDITY_INSTANCE,ENV_HUMIDITY);
+	if(TargetBoardFeatures.TempSensorsIsInit[1])
+		BSP_MOTION_SENSOR_Enable(TEMPERATURE_INSTANCE_2, ENV_TEMPERATURE);
+    if(TargetBoardFeatures.PressSensorIsInit)
+    	BSP_MOTION_SENSOR_Enable(PRESSURE_INSTANCE, ENV_PRESSURE);
+
+
+
+}
 
 /**
   * @brief  Send TaiChi Data to BLE
@@ -1064,8 +1256,45 @@ static void SendTaiChiData(void)
 {
 
   /* Check have data waiting to send*/
-	if (!taiChiResultPos)
+	if (!taiChiResultPos){
+
+
+	    if (W2ST_CHECK_CONNECTION(W2ST_CONNECT_TAICHI) && !taiChiResultPos && BufftaiChiResult[0]==NULL){
+
+	    	// Entry to Sleep mode for Power Save when no activity
+#ifdef PREDMNT1_ENABLE_PRINTF
+
+
+
+	    	  PREDMNT1_PRINTF("Enter Sleep mode\r\n");
+
+
+
+
+#endif
+
+
+
+	    	 HAL_SuspendTick();
+	    //	 SleepDisable();
+	    	 HAL_PWREx_EnableLowPowerRunMode();
+	    	// HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON,PWR_STOPENTRY_WFI);
+	    	 HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON,PWR_SLEEPENTRY_WFI);
+	     	 HAL_PWREx_DisableLowPowerRunMode();
+	    //	 SleepEnable();
+	    	 HAL_ResumeTick();
+
+
+
+
+
+
+	     }
+
+
+
 			  return;
+	}
 
 
   if(W2ST_CHECK_CONNECTION(W2ST_CONNECT_TAICHI)) {
@@ -1120,14 +1349,21 @@ static void SendTaiChiData(void)
 
 
 	  i=0;
+
 	  PREDMNT1_PRINTF("Send Hex:\r\n");
-	  do
+
+	  do {
 	 	 PREDMNT1_PRINTF("%02X ",buff[i++])
+	  }
 	  while(++i<(4+W2ST_TAICHI_MAX_BUFF_LEN*6));
 
 	  PREDMNT1_PRINTF("\r\n");
 
+
 	  TaiChi_Update(buff);
+
+
+
 
     
 
@@ -1136,9 +1372,12 @@ static void SendTaiChiData(void)
        BytesToWrite = sprintf((char *)BufferToWrite,"send taichi data");
        Term_Update(BufferToWrite,BytesToWrite);
      } else {
-       PREDMNT1_PRINTF("send taichi data");
+       PREDMNT1_PRINTF("send taichi data\r\n");
      }
 #endif /* PREDMNT1_DEBUG_NOTIFY_TRAMISSION */
+
+
+
   }
 
 //#ifdef PREDMNT1_DEBUG_NOTIFY_TRAMISSION
@@ -1456,6 +1695,7 @@ static void Init_BlueNRG_Custom_Services(void)
 {
   int ret;
   
+
   ret = Add_HW_ServW2ST_Service();
   if(ret == BLE_STATUS_SUCCESS)
   {
@@ -1465,7 +1705,7 @@ static void Init_BlueNRG_Custom_Services(void)
   {
      PREDMNT1_PRINTF("\r\nError while adding HW & SW Service W2ST\r\n");
   }
-  
+
   ret = Add_SW_ServW2ST_Service();
   if(ret == BLE_STATUS_SUCCESS)
   {
@@ -1487,6 +1727,7 @@ static void Init_BlueNRG_Custom_Services(void)
   {
      PREDMNT1_PRINTF("\r\nError while adding Console Service W2ST\r\n");
   }
+
 
   ret = Add_ConfigW2ST_Service();
   if(ret == BLE_STATUS_SUCCESS)
@@ -1584,7 +1825,7 @@ void SystemClock_Config(void)
   RCC_PeriphCLKInitTypeDef PeriphClkInit;
 
   /* Configure the main internal regulator output voltage */
-  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST) != HAL_OK)
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1609,14 +1850,16 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                                |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
   
+
+
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC
                                       |RCC_PERIPHCLK_DFSDM1
                                       |RCC_PERIPHCLK_USB

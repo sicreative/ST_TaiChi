@@ -179,7 +179,7 @@ static void Init_MEMS_Sensors(void)
   {
     PREDMNT1_PRINTF("\tError Magneto Sensor\n\r");
   }
-    
+
   if(ENV_SENSOR_Init(HUMIDITY_INSTANCE,ENV_TEMPERATURE| ENV_HUMIDITY)==BSP_ERROR_NONE)
   {
     TargetBoardFeatures.TempSensorsIsInit[0]= 1;
@@ -204,43 +204,45 @@ static void Init_MEMS_Sensors(void)
     PREDMNT1_PRINTF("\tError Temperature and Pressure (Sensor2)\n\r");
   }
 
+
+
   /*  Enable all the sensors */
   if(TargetBoardFeatures.AccSensorIsInit)
   {
     if(MOTION_SENSOR_Enable(ACCELERO_INSTANCE, MOTION_ACCELERO)==BSP_ERROR_NONE)
       PREDMNT1_PRINTF("\tEnabled Accelero Sensor\n\r");
   }
-  
+
   if(TargetBoardFeatures.GyroSensorIsInit)
   {
     if(MOTION_SENSOR_Enable(GYRO_INSTANCE, MOTION_GYRO)==BSP_ERROR_NONE)
       PREDMNT1_PRINTF("\tEnabled Gyroscope Sensor\n\r");
   }
-  
+
   if(TargetBoardFeatures.MagSensorIsInit)
   {
     if(MOTION_SENSOR_Enable(MAGNETO_INSTANCE, MOTION_MAGNETO)==BSP_ERROR_NONE)
       PREDMNT1_PRINTF("\tEnabled Magneto Sensor\n\r");
   }
-   
+
   if(TargetBoardFeatures.TempSensorsIsInit[0])
   {
     if(ENV_SENSOR_Enable(TEMPERATURE_INSTANCE_1, ENV_TEMPERATURE)==BSP_ERROR_NONE)
       PREDMNT1_PRINTF("\tEnabled Temperature\t(Sensor1)\n\r");
   }
-  
+
   if(TargetBoardFeatures.HumSensorIsInit)
   {
     if(ENV_SENSOR_Enable(HUMIDITY_INSTANCE, ENV_HUMIDITY)==BSP_ERROR_NONE)
       PREDMNT1_PRINTF("\tEnabled Humidity\t(Sensor1)\n\r");
   }
-     
+
   if(TargetBoardFeatures.TempSensorsIsInit[1])
   {
     if(ENV_SENSOR_Enable(TEMPERATURE_INSTANCE_2, ENV_TEMPERATURE)==BSP_ERROR_NONE)
       PREDMNT1_PRINTF("\tEnabled Temperature\t(Sensor2)\n\r");
   }
-  
+
   if(TargetBoardFeatures.PressSensorIsInit)
   {
     if(ENV_SENSOR_Enable(PRESSURE_INSTANCE, ENV_PRESSURE)==BSP_ERROR_NONE)
@@ -296,6 +298,8 @@ static void Init_MEMS_Mics(uint32_t AudioFreq, uint32_t AudioVolume)
   * @}
   */
 
+
+
 /** @defgroup PREDCTIVE_MAINTENANCE_TARGET_PLATFORM_EXPORTED_FUNCTIONS Predictive Maintenance Target Platform Exported Functions
   * @{
   */
@@ -338,9 +342,11 @@ void InitTargetPlatform(TargetType_t BoardType)
   BSP_LED_Init(LED1);  
   
   BSP_BC_Init();
-  BSP_BC_BatMS_Init();
+ // BSP_BC_BatMS_Init();
   BSP_BC_Chrg_Init();
-  BSP_BC_CmdSend(BATMS_ON);
+ // BSP_BC_CmdSend(BATMS_ON);
+
+
   
   PREDMNT1_PRINTF("\r\nSTMicroelectronics %s:\r\n"
           "\t%s\r\n"
@@ -350,6 +356,10 @@ void InitTargetPlatform(TargetType_t BoardType)
           PREDMNT1_PACKAGENAME,
           CONFIG_NAME,
           PREDMNT1_VERSION_MAJOR,PREDMNT1_VERSION_MINOR,PREDMNT1_VERSION_PATCH);
+
+
+  PREDMNT1_PRINTF("\r\nClock Freq: %d:\r\n",SystemCoreClock)
+
 
   /* Reset all the Target's Features */
   memset(&TargetBoardFeatures, 0, sizeof(TargetFeatures_t));

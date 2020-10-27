@@ -98,6 +98,12 @@ extern uint32_t uhCCR4_Val;
 
 
 
+extern volatile uint8_t taiChiResultPos;
+
+extern void SleepEnable(void);
+extern void SleepDisable(void);
+
+
 
 /* Private variables ------------------------------------------------------------*/
 #ifdef DISABLE_FOTA
@@ -127,6 +133,7 @@ static uint16_t StdErrCharHandle;
 
 static uint16_t TaiChiServW2STHandle;
 static uint16_t TaiChiCharHandle;
+
 
 
 static uint8_t LastStderrBuffer[W2ST_MAX_CHAR_LEN];
@@ -461,7 +468,7 @@ tBleStatus Add_HW_ServW2ST_Service(void)
   
   /* Environmental */
   uint8_t max_attr_records= 4;
-  
+
   COPY_HW_SENS_W2ST_SERVICE_UUID(uuid);
   BLUENRG_memcpy(&service_uuid.Service_UUID_128, uuid, 16);
   ret = aci_gatt_add_service(UUID_TYPE_128, &service_uuid, PRIMARY_SERVICE,
@@ -471,7 +478,7 @@ tBleStatus Add_HW_ServW2ST_Service(void)
   if (ret != BLE_STATUS_SUCCESS) {
     goto fail;
   }
-  
+
   /* Fill the Environmental BLE Characteristc */
   COPY_ENVIRONMENTAL_W2ST_CHAR_UUID(uuid);
   if(TargetBoardFeatures.NumTempSensors==2) {
@@ -518,7 +525,7 @@ tBleStatus Add_HW_ServW2ST_Service(void)
   if (ret != BLE_STATUS_SUCCESS) {
     goto fail;
   }
-  
+
   COPY_MIC_W2ST_CHAR_UUID(uuid);
   BLUENRG_memcpy(&char_uuid.Char_UUID_128, uuid, 16);
   ret =  aci_gatt_add_char(HWServW2STHandle, UUID_TYPE_128, &char_uuid,2+AUDIO_IN_CHANNELS,
@@ -560,7 +567,7 @@ fail:
 tBleStatus Add_TaiChi_ServW2ST_Service(void)
 {
   tBleStatus ret;
-  int32_t NumberOfRecords=4;
+  int32_t NumberOfRecords=3;
 
   uint8_t uuid[16];
 
@@ -1293,10 +1300,10 @@ tBleStatus FFT_AlarmSubrangeStatus_Update(sAxesMagResults_t *AccAxesMagResults,s
 void setBeacon(void)
 {
 
-/*Set iBeacon avertising packet based on Apple Proximity beacon specification 2.1 */
+/*Set iBeacon advertising packet based on Apple Proximity beacon specification 2.1 */
 	  uint8_t beacon[31] =
 	  {0x02,0x01,0x06,0x1A,0xFF,0x4C,0x00,0x02,0x15,
-	   0x00,0x02,0x00,0x00,0x00,0x0d,0x11,0xe1,0xac,0x36,0x00,0x02,0xa5,0xd5,0xc5,0x1b,
+	   0x00,0x02,0x00,0x00,0x00,0x0d,0x11,0xe1,0xac,0x36,0x00,0x02,0xa5,0xd5,0xc5,0x1b, //custom UUID
 	   0x00,0x00,0x00,0x00,0xc6,0x00};
 
 	  /* switch off connectable */
@@ -1359,10 +1366,10 @@ void setConnectable(void)
 
 
   uint8_t local_name[8] = {AD_TYPE_COMPLETE_LOCAL_NAME,NodeName[1],NodeName[2],NodeName[3],NodeName[4],NodeName[5],NodeName[6],NodeName[7]};
-  uint8_t manuf_data[26] = {
+  uint8_t manuf_data[21] = {
     2,0x0A,0x00 /* 0 dBm */, // Trasmission Power
     //8,0x09,NAME_BLUEMS, // Complete Name
-    8,0x09,NodeName[1],NodeName[2],NodeName[3],NodeName[4],NodeName[5],NodeName[6],NodeName[7], // Complete Name
+    3,0x09,'T','C', // Complete Name
     13,0xFF,0x01/*SKD version */,
     0x92,  /* Changed  default Sensor.tile DeviceID 0x02 to 0x92 for TaiChi Device */
     0x00, /* AudioSync+AudioData */
@@ -1378,63 +1385,84 @@ void setConnectable(void)
   };
   
   /* BLE MAC */
-  manuf_data[20] = bdaddr[5];
-  manuf_data[21] = bdaddr[4];
-  manuf_data[22] = bdaddr[3];
-  manuf_data[23] = bdaddr[2];
-  manuf_data[24] = bdaddr[1];
-  manuf_data[25] = bdaddr[0];
+  manuf_data[15] = bdaddr[5];
+  manuf_data[16] = bdaddr[4];
+  manuf_data[17] = bdaddr[3];
+  manuf_data[18] = bdaddr[2];
+  manuf_data[19] = bdaddr[1];
+  manuf_data[20] = bdaddr[0];
 
   /* Mic */
-  manuf_data[16] |= 0x04;
+  manuf_data[11] |= 0x04;
 
   if(TargetBoardFeatures.NumTempSensors==2) {
     /* Two Temperature values*/
-    manuf_data[17] |= 0x05;
+    manuf_data[12] |= 0x05;
   } else if(TargetBoardFeatures.NumTempSensors==1) {
     /* One Temperature value*/
-    manuf_data[17] |= 0x04; 
+    manuf_data[12] |= 0x04;
   }
 
   /* Humidity Value */
   if(TargetBoardFeatures.HumSensorIsInit)
   {
-    manuf_data[17] |= 0x08;
+    manuf_data[12] |= 0x08;
   }
 
   /* Pressure value*/
   if(TargetBoardFeatures.PressSensorIsInit)
   {
-    manuf_data[17] |= 0x10;
+    manuf_data[12] |= 0x10;
   }
   
   /* Battery Info */
-  manuf_data[17] |= 0x02;
+  manuf_data[12] |= 0x02;
   
   /*  FFT Amplitude */
-  manuf_data[19] |= 0x05;
+  manuf_data[14] |= 0x05;
 
   /*  Time Domain */
-  manuf_data[19] |= 0x06;   
+  manuf_data[14] |= 0x06;
   
   /*  FFT Alarm */
-  manuf_data[19] |= 0x07; 
+  manuf_data[14] |= 0x07;
   
   /* disable beacon */
   tBleStatus ret = hci_le_set_advertise_enable(0x00);
 
+  if (ret){
+	  if (ret!=BLE_ERROR_COMMAND_DISALLOWED)
+		  PREDMNT1_PRINTF("\r\n close advertising failure: %d \r\n\r\n",ret);
+  }
 
   /* disable scan response */
   hci_le_set_scan_response_data(0,NULL);
 
 
-  aci_gap_set_discoverable(ADV_IND, 0, 0,
+  ret = aci_gap_set_discoverable(ADV_IND, 0x00, 0x00,
                            RANDOM_ADDR,
                            NO_WHITE_LIST_USE,
-                           sizeof(local_name), local_name, 0, NULL, 0, 0);
+					// Based on Apple Design Guidelines set Slave Interval Min 450ms and Max 900ms
+					//to suggest the CoreBluetooth connection interval for battery optimize
+                           sizeof(local_name), local_name, 0, NULL, 0x0168, 0x02D0);
+
+  if (ret){
+  	  PREDMNT1_PRINTF("\r\n set discoverable failure: %d \r\n\r\n",ret);
+    }
+
+
+
 
   /* Send Advertising data */
-  aci_gap_update_adv_data(26, manuf_data);
+
+  ret =  aci_gap_update_adv_data(21, manuf_data);
+
+
+
+  if (ret){
+  	  PREDMNT1_PRINTF("\r\n update adv failure: %d \r\n\r\n",ret);
+    }
+
 
 
 }
@@ -1600,7 +1628,13 @@ static void TaiChi_AttributeModified_CB(uint8_t *att_data)
 {
   if (att_data[0] == 01) {
     W2ST_ON_CONNECTION(W2ST_CONNECT_TAICHI);
-
+    SleepDisable();
+    // Send a zero packet to iOS for first response if no data waiting to send ,
+    // prevent iOS force reconnect and trigger this and prevented enter to sleep mode
+    if (!taiChiResultPos){
+    	uint8_t buff[4+W2ST_TAICHI_MAX_BUFF_LEN*6] = {};
+    	TaiChi_Update(buff);
+    }
 
   } else if (att_data[0] == 0){
     W2ST_OFF_CONNECTION(W2ST_CONNECT_TAICHI);
@@ -1635,6 +1669,8 @@ static void Environmental_AttributeModified_CB(uint8_t *att_data)
     if(HAL_TIM_Base_Start_IT(&TimEnvHandle) != HAL_OK){
       /* Starting Error */
       Error_Handler();
+
+
     }
   } else if (att_data[0] == 0){
     W2ST_OFF_CONNECTION(W2ST_CONNECT_ENV);
@@ -1758,13 +1794,29 @@ static void BatteryFeatures_AttributeModified_CB(uint8_t *att_data)
      /* Starting Error */
      Error_Handler();
    }
+
+
+   BSP_BC_BatMS_Init();
+
+   BSP_BC_CmdSend(BATMS_ON);
+
+
+   PREDMNT1_PRINTF("Start Battery MS\r\n");
+
+
+
   } else if (att_data[0] == 0){
     W2ST_OFF_CONNECTION(W2ST_CONNECT_BATTERY_INFO);
+
+
+
    /* Stop the TIM Base generation in interrupt mode */
    if(HAL_TIM_Base_Stop_IT(&TimEnvHandle) != HAL_OK){
      /* Stopping Error */
      Error_Handler();
    }
+
+
   }
 #ifdef ALLMEMS1_DEBUG_CONNECTION
   if(W2ST_CHECK_CONNECTION(W2ST_CONNECT_STD_TERM)) {
@@ -2656,6 +2708,20 @@ static void Force_UUID_Rescan(void)
 
 /* ***************** BlueNRG-2 Stack Callbacks ********************************/
 
+void hci_le_connection_update_complete_event(uint8_t Status,
+                                             uint16_t Connection_Handle,
+                                             uint16_t Conn_Interval,
+                                             uint16_t Conn_Latency,
+                                             uint16_t Supervision_Timeout){
+#ifdef PREDMNT1_DEBUG_CONNECTION
+
+  PREDMNT1_PRINTF(">>>>>>CONNECTION UPDATE %d %d %d \r\n\r\n",Conn_Interval,Conn_Latency,Supervision_Timeout);
+
+#endif /* PREDMNT1_DEBUG_CONNECTION */
+}
+
+
+
 /*******************************************************************************
  * Function Name  : hci_le_connection_complete_event.
  * Description    : This event indicates that a new connection has been created.
@@ -2678,11 +2744,20 @@ void hci_le_connection_complete_event(uint8_t Status,
 
 #ifdef PREDMNT1_DEBUG_CONNECTION
   PREDMNT1_PRINTF(">>>>>>CONNECTED %x:%x:%x:%x:%x:%x\r\n\r\n",Peer_Address[5],Peer_Address[4],Peer_Address[3],Peer_Address[2],Peer_Address[1],Peer_Address[0]);
+
+  PREDMNT1_PRINTF(">>>>>>Latency %s %d %d %d \r\n\r\n",Role?"Slave":"Master",Conn_Interval,Conn_Latency,Supervision_Timeout);
+
 #endif /* PREDMNT1_DEBUG_CONNECTION */
+
+
+
 
   ConnectionBleStatus=0;
   FirstConnectionConfig  =0;
   
+
+
+
 #ifdef DISABLE_FOTA
   FirstCommandSent       =1;
 #endif /* DISABLE_FOTA */
@@ -2708,6 +2783,14 @@ void hci_disconnection_complete_event(uint8_t Status,
 #ifdef PREDMNT1_DEBUG_CONNECTION  
   PREDMNT1_PRINTF("\r\n<<<<<<DISCONNECTED\r\n");
 #endif /* PREDMNT1_DEBUG_CONNECTION */
+
+ if (W2ST_CHECK_CONNECTION(W2ST_CONNECT_BATTERY_INFO)){
+     BSP_BC_BatMS_DeInit();
+
+     BSP_BC_CmdSend(BATMS_OFF);
+
+     PREDMNT1_PRINTF("Close Battery MS\r\n");
+ }
 
   /* Make the device connectable again. */
   set_connectable = TRUE;
@@ -2743,6 +2826,9 @@ void hci_disconnection_complete_event(uint8_t Status,
     /* Stopping Error */
     Error_Handler();
   }
+
+
+  SleepEnable();
 }
 /* end hci_disconnection_complete_event() */
 

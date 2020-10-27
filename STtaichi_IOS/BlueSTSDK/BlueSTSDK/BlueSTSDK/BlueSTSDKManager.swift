@@ -39,6 +39,9 @@ import Foundation
         super.init()
         // Added the Identifier key for state restoration
         mCBCentralManager = CBCentralManager(delegate: self, queue: nil,options: [CBCentralManagerOptionRestoreIdentifierKey: BlueSTSDKManager.BT_RESTORE_KEY])
+        
+        
+        
         let  defaultFeatureMap = BlueSTSDKBoardFeatureMap.boardFeatureMap
         defaultFeatureMap.forEach{ boardId, featureMap in
             mNodeFeatures[boardId.uint8Value] = featureMap
@@ -224,6 +227,7 @@ import Foundation
         guard mCBCentralManager.state == .poweredOn else{
             return
         }
+     
         mCBCentralManager.connect(peripheral, options: nil)
     }
     
@@ -263,6 +267,7 @@ extension BlueSTSDKManager : CBCentralManagerDelegate {
     public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]){
         
         NSLog("TaiChi RestoreState for Bluetooth")
+       
     }
     
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
@@ -274,7 +279,15 @@ extension BlueSTSDKManager : CBCentralManagerDelegate {
         }else{
             //get the fist value != nil returned by a filter
             
+          
+            
             let firstMatch = mAdvertiseFilters.lazy.compactMap{ $0.filter(advertisementData)}.first
+            
+            if peripheral.name != nil && peripheral.name == "PM1V220"{
+                
+                print("peripheral \(peripheral.name!)  \(advertisementData[CBAdvertisementDataManufacturerDataKey])")
+            }
+            
             if let info = firstMatch{
                 let newNode = BlueSTSDKNode(peripheral, rssi: RSSI, advertiseInfo:info)
                 addAndNotify(node: newNode)

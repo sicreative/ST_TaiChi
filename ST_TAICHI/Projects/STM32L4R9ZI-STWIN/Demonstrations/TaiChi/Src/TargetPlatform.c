@@ -339,7 +339,7 @@ void InitTargetPlatform(TargetType_t BoardType)
   BSP_PB_PWR_Init();
   
   /* Initialize LED */
-  BSP_LED_Init(LED1);  
+  BSP_LED_Init(LED1);
   
   BSP_BC_Init();
  // BSP_BC_BatMS_Init();

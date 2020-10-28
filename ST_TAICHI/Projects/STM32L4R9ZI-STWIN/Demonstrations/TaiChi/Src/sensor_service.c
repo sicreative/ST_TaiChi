@@ -100,8 +100,8 @@ extern uint32_t uhCCR4_Val;
 
 extern volatile uint8_t taiChiResultPos;
 
-extern void SleepEnable(void);
-extern void SleepDisable(void);
+extern void TaiChiEnableHW(void);
+extern void TaiChiDisableHW(void);
 
 
 
@@ -1628,7 +1628,7 @@ static void TaiChi_AttributeModified_CB(uint8_t *att_data)
 {
   if (att_data[0] == 01) {
     W2ST_ON_CONNECTION(W2ST_CONNECT_TAICHI);
-    SleepDisable();
+    TaiChiDisableHW();
     // Send a zero packet to iOS for first response if no data waiting to send ,
     // prevent iOS force reconnect and trigger this and prevented enter to sleep mode
     if (!taiChiResultPos){
@@ -1799,6 +1799,8 @@ static void BatteryFeatures_AttributeModified_CB(uint8_t *att_data)
    BSP_BC_BatMS_Init();
 
    BSP_BC_CmdSend(BATMS_ON);
+
+   BSP_BC_CmdSend(SHIPPING_MODE_ON);
 
 
    PREDMNT1_PRINTF("Start Battery MS\r\n");
@@ -2828,7 +2830,7 @@ void hci_disconnection_complete_event(uint8_t Status,
   }
 
 
-  SleepEnable();
+  TaiChiEnableHW();
 }
 /* end hci_disconnection_complete_event() */
 

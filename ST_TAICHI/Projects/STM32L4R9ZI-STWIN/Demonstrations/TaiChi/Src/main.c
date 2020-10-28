@@ -519,6 +519,8 @@ static void MotionMLTrainingData(void){
   */
 int main(void)
 {
+
+
   HAL_Init();
   
     HAL_PWREx_EnableVddIO2();
@@ -1076,11 +1078,11 @@ static void SendBatteryInfoData(void)
 }
 
 /**
-  * @brief  stop unnecessary IRQ and off all sensor before sleep
+  * @brief  stop unnecessary IRQ and off GPIO for taichi start
   * @param  None
   * @retval None
   */
-void SleepDisable(void){
+void TaiChiDisableHW(void){
 
 	HAL_NVIC_DisableIRQ(DFSDM_DMA_ANALOG_IRQn);
 	HAL_NVIC_DisableIRQ(DFSDM_DMA_DIGITAL_IRQn);
@@ -1108,9 +1110,9 @@ void SleepDisable(void){
 
 
 	//HAL_NVIC_DisableIRQ(HCI_TL_SPI_EXTI_IRQn);
-	HAL_NVIC_DisableIRQ(OTG_FS_IRQn);
+	//HAL_NVIC_DisableIRQ(OTG_FS_IRQn);
 	HAL_NVIC_DisableIRQ(TIM3_IRQn);
-	HAL_NVIC_DisableIRQ(STBC02_USED_TIM_IRQn);
+	//HAL_NVIC_DisableIRQ(STBC02_USED_TIM_IRQn);
 	HAL_NVIC_DisableIRQ(TIM4_IRQn);
 	HAL_NVIC_DisableIRQ(TIM5_IRQn);
 	HAL_NVIC_DisableIRQ(TIM1_CC_IRQn);
@@ -1126,15 +1128,6 @@ void SleepDisable(void){
 
 
 
-	__HAL_RCC_TIM1_CLK_DISABLE();
-	 __HAL_RCC_TIM4_CLK_DISABLE();
-	 __HAL_RCC_TIM5_CLK_DISABLE();
-
-	 /*##-1- Enable peripherals and GPIO Clocks #################################*/
-	  /* TIM3 Peripheral clock enable */
-	  __HAL_RCC_TIM3_CLK_DISABLE();
-	  /* Enable GPIO channels Clock */
-	  __HAL_RCC_GPIOB_CLK_DISABLE();
 
 
 	  HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0);
@@ -1152,11 +1145,11 @@ void SleepDisable(void){
 }
 
 /**
-  * @brief  star  IRQ and on all sensor after sleep
+  * @brief  reinit unnecessary IRQ and off GPIO exit of taichi
   * @param  None
   * @retval None
   */
-void SleepEnable(void){
+void TaiChiEnableHW(void){
 
 
 
@@ -1166,9 +1159,9 @@ void SleepEnable(void){
 	HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
 	//HAL_NVIC_EnableIRQ(HCI_TL_SPI_EXTI_IRQn);
-	HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
+	//HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
 	HAL_NVIC_EnableIRQ(TIM3_IRQn);
-	HAL_NVIC_EnableIRQ(STBC02_USED_TIM_IRQn);
+	//HAL_NVIC_EnableIRQ(STBC02_USED_TIM_IRQn);
 	HAL_NVIC_EnableIRQ(TIM4_IRQn);
 	HAL_NVIC_EnableIRQ(TIM5_IRQn);
 	HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
@@ -1181,19 +1174,10 @@ void SleepEnable(void){
 
 
 
-	__HAL_RCC_TIM1_CLK_ENABLE();
-	 __HAL_RCC_TIM4_CLK_ENABLE();
-	 __HAL_RCC_TIM5_CLK_ENABLE();
-
-	STBC02_USED_TIM_CLK_ENABLE();
 
 
 
-	 /*##-1- Enable peripherals and GPIO Clocks #################################*/
-	  /* TIM3 Peripheral clock enable */
-	  __HAL_RCC_TIM3_CLK_ENABLE();
-	  /* Enable GPIO channels Clock */
-	  __HAL_RCC_GPIOB_CLK_ENABLE();
+
 
 	  GPIO_InitTypeDef GPIO_InitStruct;
 
@@ -1276,12 +1260,12 @@ static void SendTaiChiData(void)
 
 
 	    	 HAL_SuspendTick();
-	    //	 SleepDisable();
+	    //	 TaiChiDisableHW();
 	    	 HAL_PWREx_EnableLowPowerRunMode();
-	    	// HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON,PWR_STOPENTRY_WFI);
+	    	//HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON,PWR_STOPENTRY_WFI);
 	    	 HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON,PWR_SLEEPENTRY_WFI);
 	     	 HAL_PWREx_DisableLowPowerRunMode();
-	    //	 SleepEnable();
+	    //	 TaiChiEnableHW();
 	    	 HAL_ResumeTick();
 
 
